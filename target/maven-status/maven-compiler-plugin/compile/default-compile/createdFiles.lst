@@ -1,0 +1,6 @@
+com\ammofull\java\billsplitter\engine\BillDetailsTO.class
+com\ammofull\java\billsplitter\engine\BillSplitterServiceImpl.class
+com\ammofull\java\billsplitter\client\BillSplitterConsoleClient.class
+com\ammofull\java\billsplitter\engine\ItemTO.class
+com\ammofull\java\billsplitter\client\BillSplitterFileClient.class
+com\ammofull\java\billsplitter\api\BillSplitterService.class
