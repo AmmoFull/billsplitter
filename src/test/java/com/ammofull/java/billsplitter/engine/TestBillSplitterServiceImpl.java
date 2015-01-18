@@ -4,10 +4,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.ammofull.java.billsplitter.engine.BillDetailsTO;
-import com.ammofull.java.billsplitter.engine.BillSplitterServiceImpl;
-import com.ammofull.java.billsplitter.engine.ItemTO;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -44,7 +40,7 @@ public class TestBillSplitterServiceImpl extends TestCase {
 	{
 		try
 		{
-			billSplitterServiceImpl.addUser("");
+			billSplitterServiceImpl.addUser("",null);
 			fail("Exception was expected for empty name");
 		}
 		catch(IllegalArgumentException e)
@@ -54,7 +50,7 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		
 		try
 		{
-			billSplitterServiceImpl.addUser(null);
+			billSplitterServiceImpl.addUser(null,null);
 			fail("Exception was expected for null name");
 		}
 		catch(IllegalArgumentException e)
@@ -64,7 +60,7 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		
 		try
 		{
-			billSplitterServiceImpl.addUser(BillSplitterServiceImpl.ITEM_NAME_FOR_TIPS_AND_TAXES);
+			billSplitterServiceImpl.addUser(BillSplitterServiceImpl.ITEM_NAME_FOR_TIPS_AND_TAXES,null);
 			fail("Exception was expected for reserved name");
 		}
 		catch(IllegalArgumentException e)
@@ -74,8 +70,8 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		
 		try
 		{
-			billSplitterServiceImpl.addUser("User");
-			billSplitterServiceImpl.addUser("User");
+			BillDetailsTO billDetailsTO = billSplitterServiceImpl.addUser("User",null);
+			billSplitterServiceImpl.addUser("User",billDetailsTO);
 			fail("Exception was expected for name already present");
 		}
 		catch(IllegalArgumentException e)
@@ -91,8 +87,8 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		String user2 = "User2";
 		
 		// When
-		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addUser(user1);
-		billDetailsTO = billSplitterServiceImpl.addUser(user2);
+		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addUser(user1,null);
+		billDetailsTO = billSplitterServiceImpl.addUser(user2,billDetailsTO);
 		
 		// Then
 		Set<String> users = billDetailsTO.getUsers();
@@ -121,7 +117,7 @@ public class TestBillSplitterServiceImpl extends TestCase {
 	{
 		try
 		{
-			billSplitterServiceImpl.addItem("",10D);
+			billSplitterServiceImpl.addItem("",10D,null);
 			fail("Exception was expected for empty name");
 		}
 		catch(IllegalArgumentException e)
@@ -131,7 +127,7 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		
 		try
 		{
-			billSplitterServiceImpl.addItem(null,10D);
+			billSplitterServiceImpl.addItem(null,10D,null);
 			fail("Exception was expected for null name");
 		}
 		catch(IllegalArgumentException e)
@@ -141,7 +137,7 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		
 		try
 		{
-			billSplitterServiceImpl.addItem("Item",null);
+			billSplitterServiceImpl.addItem("Item",null,null);
 			fail("Exception was expected for null amount");
 		}
 		catch(IllegalArgumentException e)
@@ -151,7 +147,7 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		
 		try
 		{
-			billSplitterServiceImpl.addItem(BillSplitterServiceImpl.ITEM_NAME_FOR_TIPS_AND_TAXES,10D);
+			billSplitterServiceImpl.addItem(BillSplitterServiceImpl.ITEM_NAME_FOR_TIPS_AND_TAXES,10D,null);
 			fail("Exception was expected for reserved name");
 		}
 		catch(IllegalArgumentException e)
@@ -161,8 +157,8 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		
 		try
 		{
-			billSplitterServiceImpl.addItem("Item",1D);
-			billSplitterServiceImpl.addItem("Item",2D);
+			BillDetailsTO billDetailsTO = billSplitterServiceImpl.addItem("Item",1D,null);
+			billSplitterServiceImpl.addItem("Item",2D,billDetailsTO);
 			fail("Exception was expected for name already present");
 		}
 		catch(IllegalArgumentException e)
@@ -172,7 +168,7 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		
 		try
 		{
-			billSplitterServiceImpl.addItem("Item",0.0);
+			billSplitterServiceImpl.addItem("Item",0.0,null);
 			fail("Exception was expected for zero amount");
 		}
 		catch(IllegalArgumentException e)
@@ -184,22 +180,22 @@ public class TestBillSplitterServiceImpl extends TestCase {
 	public void testAddItemWhenNoUser()
 	{
 		// When
-		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addItem("Item1", 10.0);
-		billDetailsTO = billSplitterServiceImpl.addItem("Item2", 20.0);
+		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addItem("Item1", 10.0,null);
+		billDetailsTO = billSplitterServiceImpl.addItem("Item2", 20.0,billDetailsTO);
 		
 		// Then
 		assertTrue(billDetailsTO.getUserVsPercentageContribInTheBill().isEmpty());
 		assertTrue(billDetailsTO.getUserVsTotalPerHeadContribution().isEmpty());
 		
-		Map<ItemTO,Set<String>> itemVsParticipants = billDetailsTO.getItemsVsParticipants();
+		Map<String,Set<String>> itemVsParticipants = billDetailsTO.getItemsVsParticipants();
 		assertEquals(2,itemVsParticipants.size());
-		assertTrue(itemVsParticipants.get(new ItemTO("Item1", 1D)).isEmpty());
-		assertTrue(itemVsParticipants.get(new ItemTO("Item2", 1D)).isEmpty());
+		assertTrue(itemVsParticipants.get("Item1").isEmpty());
+		assertTrue(itemVsParticipants.get("Item2").isEmpty());
 		
-		Map<ItemTO,Map<String,Double>> itemVsContributions = billDetailsTO.getItemsVsPerHeadContributions();
+		Map<String,Map<String,Double>> itemVsContributions = billDetailsTO.getItemsVsPerHeadContributions();
 		assertEquals(2,itemVsContributions.size());
-		assertTrue(itemVsContributions.get(new ItemTO("Item1",1D)).isEmpty());
-		assertTrue(itemVsContributions.get(new ItemTO("Item2",1D)).isEmpty());
+		assertTrue(itemVsContributions.get("Item1").isEmpty());
+		assertTrue(itemVsContributions.get("Item2").isEmpty());
 	}
 	
 	////////////////////////////////
@@ -211,7 +207,7 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		participants.add("User");
 		try
 		{
-			billSplitterServiceImpl.addContributionsForItem(null, participants);
+			billSplitterServiceImpl.addContributionsForItem(null, participants,null);
 			fail("Exception expected for null item name");
 		}
 		catch(IllegalArgumentException e)
@@ -221,7 +217,7 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		
 		try
 		{
-			billSplitterServiceImpl.addContributionsForItem("Item", null);
+			billSplitterServiceImpl.addContributionsForItem("Item", null,null);
 			fail("Exception expected for null participants");
 		}
 		catch(IllegalArgumentException e)
@@ -232,7 +228,7 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		try
 		{
 			Set<String> empty = new HashSet<>();
-			billSplitterServiceImpl.addContributionsForItem("Item",empty);
+			billSplitterServiceImpl.addContributionsForItem("Item",empty,null);
 			fail("Exception expected for empty participants");
 		}
 		catch(IllegalArgumentException e)
@@ -242,7 +238,7 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		
 		try
 		{
-			billSplitterServiceImpl.addContributionsForItem(BillSplitterServiceImpl.ITEM_NAME_FOR_TIPS_AND_TAXES, participants);
+			billSplitterServiceImpl.addContributionsForItem(BillSplitterServiceImpl.ITEM_NAME_FOR_TIPS_AND_TAXES, participants,null);
 			fail("Exception expected for reserved name");
 		}
 		catch(IllegalArgumentException e)
@@ -254,14 +250,14 @@ public class TestBillSplitterServiceImpl extends TestCase {
 	public void testAddParticipantsWhenItemIsNotPresent()
 	{
 		// Given
-		billSplitterServiceImpl.addUser("User1");
+		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addUser("User1",null);
 		Set<String> participants = new HashSet<>();
 		participants.add("User1");
 		
 		// When
 		try 
 		{
-			billSplitterServiceImpl.addContributionsForItem("Item1", participants);	
+			billSplitterServiceImpl.addContributionsForItem("Item1", participants,billDetailsTO);	
 			fail("Exception expected for item not present");			
 		}
 		catch(IllegalArgumentException e)
@@ -274,12 +270,12 @@ public class TestBillSplitterServiceImpl extends TestCase {
 	public void testAddParticipantsWhenUserIsNotPresent()
 	{
 		// Given
-		billSplitterServiceImpl.addItem("Item1",10.0);
+		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addItem("Item1",10.0,null);
 		Set<String> participants = new HashSet<>();
 		participants.add("User1");
 
 		// When
-		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addContributionsForItem("Item1", participants);
+		billDetailsTO = billSplitterServiceImpl.addContributionsForItem("Item1", participants,billDetailsTO);
 		
 		// Then
 		assertTrue(billDetailsTO.getUsers().contains("User1"));
@@ -297,25 +293,25 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		String item1 = "Item1";
 		Double amount = 10.0;
 		
-		billSplitterServiceImpl.addItem(item1, amount);
+		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addItem(item1, amount, null);
 		
 		// When
-		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addContributionsForItem(item1, participants);
+		billDetailsTO = billSplitterServiceImpl.addContributionsForItem(item1, participants, billDetailsTO);
 		
 		// Then
 		assertTrue(billDetailsTO.getUsers().contains(user1));
 		assertTrue(billDetailsTO.getUsers().contains(user2));
 		
-		Map<ItemTO,Set<String>> itemVsParticipants = billDetailsTO.getItemsVsParticipants();
+		Map<String,Set<String>> itemVsParticipants = billDetailsTO.getItemsVsParticipants();
 		assertEquals(1,itemVsParticipants.size());
-		Set<String> actualParticipants = itemVsParticipants.get(new ItemTO(item1, amount));
+		Set<String> actualParticipants = itemVsParticipants.get(item1);
 		assertEquals(2,actualParticipants.size());
 		assertTrue(actualParticipants.contains(user1));
 		assertTrue(actualParticipants.contains(user2));
 		
-		Map<ItemTO,Map<String,Double>> itemVsPerHeadContribution = billDetailsTO.getItemsVsPerHeadContributions();
+		Map<String,Map<String,Double>> itemVsPerHeadContribution = billDetailsTO.getItemsVsPerHeadContributions();
 		assertEquals(1, itemVsPerHeadContribution.size());
-		Map<String,Double> userVsContribution = itemVsPerHeadContribution.get(new ItemTO(item1, amount));
+		Map<String,Double> userVsContribution = itemVsPerHeadContribution.get(item1);
 		assertEquals(2,userVsContribution.size());
 		assertEquals(amount/2.0,userVsContribution.get(user1));
 		assertEquals(amount/2.0,userVsContribution.get(user2));	
@@ -338,7 +334,7 @@ public class TestBillSplitterServiceImpl extends TestCase {
 	{
 		try
 		{
-			billSplitterServiceImpl.addTipsAndTaxes(null);
+			billSplitterServiceImpl.addTipsAndTaxes(null,null);
 			fail("Exception expected for null amount");
 		}
 		catch(IllegalArgumentException e)
@@ -350,24 +346,24 @@ public class TestBillSplitterServiceImpl extends TestCase {
 	public void testAddTipsAndTaxesWithoutUsers()
 	{
 		// Given
-		billSplitterServiceImpl.addItem("Item", 10.0);
+		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addItem("Item", 10.0,null);
 		
 		// When
-		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addTipsAndTaxes(1.2);
+		billDetailsTO = billSplitterServiceImpl.addTipsAndTaxes(1.2,billDetailsTO);
 		
 		// Then
 		assertEquals(1,billDetailsTO.getItemsVsPerHeadContributions().size());
-		assertTrue(billDetailsTO.getItemsVsPerHeadContributions().containsKey(new ItemTO("Item",0.0)));		
+		assertTrue(billDetailsTO.getItemsVsPerHeadContributions().containsKey("Item"));		
 		
 	}
 	
 	public void testAddTipsAndTaxesWithoutItems()
 	{
 		// Given
-		billSplitterServiceImpl.addUser("User1");
+		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addUser("User1",null);
 
 		// When
-		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addTipsAndTaxes(1.2);
+		billDetailsTO = billSplitterServiceImpl.addTipsAndTaxes(1.2,billDetailsTO);
 
 		// Then
 		assertTrue(billDetailsTO.getItemsVsPerHeadContributions().isEmpty());
@@ -377,11 +373,11 @@ public class TestBillSplitterServiceImpl extends TestCase {
 	public void testAddTipsAndTaxesWithoutContributions()
 	{
 		// Given
-		billSplitterServiceImpl.addUser("User1");
-		billSplitterServiceImpl.addItem("Item1", 10.0);
+		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addUser("User1",null);
+		billDetailsTO = billSplitterServiceImpl.addItem("Item1", 10.0,billDetailsTO);
 
 		// When
-		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addTipsAndTaxes(1.2);
+		billDetailsTO = billSplitterServiceImpl.addTipsAndTaxes(1.2,billDetailsTO);
 
 		// Then
 		assertEquals(2,billDetailsTO.getItemsVsPerHeadContributions().size());
@@ -399,15 +395,15 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		String item1 = "Item1";
 		Double amount = 10.0;
 						
-		billSplitterServiceImpl.addUser(user1);
-		billSplitterServiceImpl.addUser(user2);
-		billSplitterServiceImpl.addItem(item1, amount);
-		billSplitterServiceImpl.addContributionsForItem(item1, participants);
+		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addUser(user1,null);
+		billSplitterServiceImpl.addUser(user2,billDetailsTO);
+		billSplitterServiceImpl.addItem(item1, amount, billDetailsTO);
+		billSplitterServiceImpl.addContributionsForItem(item1, participants,billDetailsTO);
 		
 		Double expectedPerHeadContribution = (amount / participants.size()) + (1.2 * (amount / participants.size())/amount);
 
 		// When
-		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addTipsAndTaxes(1.2);
+		billDetailsTO = billSplitterServiceImpl.addTipsAndTaxes(1.2,billDetailsTO);
 
 		// Then
 		Map<String,Double> userVsTotalBill = billDetailsTO.getUserVsTotalPerHeadContribution();
@@ -445,16 +441,16 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		Double tip = 25.0;
 		
 		// When
-		billSplitterServiceImpl.addUser(user1);
-		billSplitterServiceImpl.addUser(user2);
-		billSplitterServiceImpl.addUser(user3);
-		billSplitterServiceImpl.addItem(item1, amount1);
-		billSplitterServiceImpl.addItem(item2, amount2);
-		billSplitterServiceImpl.addItem(item3, amount3);
-		billSplitterServiceImpl.addContributionsForItem(item1, participants1);
-		billSplitterServiceImpl.addContributionsForItem(item2, participants2);
-		billSplitterServiceImpl.addContributionsForItem(item3, participants3);
-		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addTipsAndTaxes(tip);
+		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addUser(user1,null);
+		billSplitterServiceImpl.addUser(user2,billDetailsTO);
+		billSplitterServiceImpl.addUser(user3,billDetailsTO);
+		billSplitterServiceImpl.addItem(item1, amount1,billDetailsTO);
+		billSplitterServiceImpl.addItem(item2, amount2,billDetailsTO);
+		billSplitterServiceImpl.addItem(item3, amount3,billDetailsTO);
+		billSplitterServiceImpl.addContributionsForItem(item1, participants1,billDetailsTO);
+		billSplitterServiceImpl.addContributionsForItem(item2, participants2,billDetailsTO);
+		billSplitterServiceImpl.addContributionsForItem(item3, participants3,billDetailsTO);
+		billSplitterServiceImpl.addTipsAndTaxes(tip,billDetailsTO);
 		
 		// Then
 		Map<String,Double> userVsTotalContrib = billDetailsTO.getUserVsTotalPerHeadContribution();
@@ -490,13 +486,13 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		Double tip = 25.0;
 
 		// When
-		billSplitterServiceImpl.addTipsAndTaxes(tip);
-		billSplitterServiceImpl.addItem(item1, amount1);
-		billSplitterServiceImpl.addItem(item2, amount2);
-		billSplitterServiceImpl.addItem(item3, amount3);
-		billSplitterServiceImpl.addContributionsForItem(item1, participants1);
-		billSplitterServiceImpl.addContributionsForItem(item2, participants2);
-		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addContributionsForItem(item3, participants3);
+		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addTipsAndTaxes(tip,null);
+		billSplitterServiceImpl.addItem(item1, amount1, billDetailsTO);
+		billSplitterServiceImpl.addItem(item2, amount2, billDetailsTO);
+		billSplitterServiceImpl.addItem(item3, amount3, billDetailsTO);
+		billSplitterServiceImpl.addContributionsForItem(item1, participants1, billDetailsTO);
+		billSplitterServiceImpl.addContributionsForItem(item2, participants2, billDetailsTO);
+		billSplitterServiceImpl.addContributionsForItem(item3, participants3, billDetailsTO);
 		
 
 		// Then
@@ -534,14 +530,14 @@ public class TestBillSplitterServiceImpl extends TestCase {
 		Double tip2 = 60.0;
 
 		// When
-		billSplitterServiceImpl.addTipsAndTaxes(tip2);
-		billSplitterServiceImpl.addItem(item1, amount1);
-		billSplitterServiceImpl.addItem(item2, amount2);
-		billSplitterServiceImpl.addItem(item3, amount3);
-		billSplitterServiceImpl.addContributionsForItem(item1, participants1);
-		billSplitterServiceImpl.addContributionsForItem(item2, participants2);
-		billSplitterServiceImpl.addContributionsForItem(item3, participants3);
-		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addTipsAndTaxes(tip1);
+		BillDetailsTO billDetailsTO = billSplitterServiceImpl.addTipsAndTaxes(tip2,null);
+		billSplitterServiceImpl.addItem(item1, amount1, billDetailsTO);
+		billSplitterServiceImpl.addItem(item2, amount2, billDetailsTO);
+		billSplitterServiceImpl.addItem(item3, amount3, billDetailsTO);
+		billSplitterServiceImpl.addContributionsForItem(item1, participants1, billDetailsTO);
+		billSplitterServiceImpl.addContributionsForItem(item2, participants2, billDetailsTO);
+		billSplitterServiceImpl.addContributionsForItem(item3, participants3, billDetailsTO);
+		billSplitterServiceImpl.addTipsAndTaxes(tip1, billDetailsTO);
 
 		// Then
 		Map<String,Double> userVsTotalContrib = billDetailsTO.getUserVsTotalPerHeadContribution();

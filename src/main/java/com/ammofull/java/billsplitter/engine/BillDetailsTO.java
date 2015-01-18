@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+
+
 /**
  * All the details of the current bill
  * @author Amod
@@ -22,21 +24,31 @@ public class BillDetailsTO {
 	private Set<String> users;
 	
 	/**
-	 * Key: 	ItemTO
-	 * Value:	Map of user name versus a set of participants for the items. If user name is present in the set, the
-	 * 			user is a participant in the item. Else not.
+	 * Key: 	Item name
+	 * Value:	Set of participants for the item. If user name is present in the set, the user is a participant in the item. Else not.
 	 */
-	private Map<ItemTO, Set<String>> itemsVsParticipants;
+	private Map<String, Set<String>> itemsVsParticipants;
+	
+	/**
+	 * Key:		Item name
+	 * Value:	The amount for this item
+	 */
+	private Map<String,Double> itemVsAmount;
+	
+	/**
+	 * The tips and taxes for this bill
+	 */
+	private Double tipsAndTaxes;
 	
 	////////////////////////
 	/// CALCULATED DATA ///
 	//////////////////////
 	
 	/**
-	 * Key: 	ItemTO
+	 * Key: 	Item name
 	 * Value:	Map of user name vs a double representing the user's $ contribution in the item
 	 */
-	private Map<ItemTO, Map<String,Double>> itemsVsPerHeadContributions;
+	private Map<String, Map<String,Double>> itemsVsPerHeadContributions;
 	
 	
 	
@@ -58,8 +70,11 @@ public class BillDetailsTO {
 		itemsVsPerHeadContributions = new HashMap<>();
 		userVsTotalPerHeadContribution = new HashMap<>();
 		itemsVsParticipants = new HashMap<>();
-		userVsPercentageContribInTheBill = new HashMap<>();		
+		userVsPercentageContribInTheBill = new HashMap<>();	
+		itemVsAmount = new HashMap<>();
+		tipsAndTaxes = 0.0;
 	}
+	
 	
 	public Set<String> getUsers() {
 		return users;
@@ -70,20 +85,21 @@ public class BillDetailsTO {
 		this.users = users;
 	}
 
-	public Map<ItemTO, Set<String>> getItemsVsParticipants() {
+	
+	public Map<String, Set<String>> getItemsVsParticipants() {
 		return itemsVsParticipants;
 	}
 
-	public void setItemsVsParticipants(Map<ItemTO, Set<String>> itemsVsParticipants) {
+	public void setItemsVsParticipants(Map<String, Set<String>> itemsVsParticipants) {
 		this.itemsVsParticipants = itemsVsParticipants;
 	}
 
-	public Map<ItemTO, Map<String, Double>> getItemsVsPerHeadContributions() {
+	
+	public Map<String, Map<String, Double>> getItemsVsPerHeadContributions() {
 		return itemsVsPerHeadContributions;
 	}
 
-	public void setItemsVsPerHeadContributions(
-			Map<ItemTO, Map<String, Double>> itemsVsPerHeadContributions) {
+	public void setItemsVsPerHeadContributions(Map<String, Map<String, Double>> itemsVsPerHeadContributions) {
 		this.itemsVsPerHeadContributions = itemsVsPerHeadContributions;
 	}
 
@@ -95,13 +111,32 @@ public class BillDetailsTO {
 		this.userVsPercentageContribInTheBill = userVsPercentageContribInTheBill;
 	}
 
+	
 	public Map<String, Double> getUserVsTotalPerHeadContribution() {
 		return userVsTotalPerHeadContribution;
 	}
 
-	public void setUserVsTotalPerHeadContribution(
-			Map<String, Double> userVsTotalPerHeadContribution) {
+	public void setUserVsTotalPerHeadContribution(Map<String, Double> userVsTotalPerHeadContribution) {
 		this.userVsTotalPerHeadContribution = userVsTotalPerHeadContribution;
 	}
-		
+
+	public Double getTipsAndTaxes() {
+		return tipsAndTaxes;
+	}
+
+	public void setTipsAndTaxes(Double tipsAndTaxes) {
+		this.tipsAndTaxes = tipsAndTaxes;
+	}
+
+
+	public Map<String, Double> getItemVsAmount() {
+		return itemVsAmount;
+	}
+
+
+	public void setItemVsAmount(Map<String, Double> itemVsAmount) {
+		this.itemVsAmount = itemVsAmount;
+	}
+	
+	
 }

@@ -77,12 +77,12 @@ public class BillSplitterFileClient {
 				if(itemName.equals(ITEM_NAME_FOR_TIPS_AND_TAXES))
 				{
 					Double amount = validateLineForTipsAndTaxes(words);
-					billDetailsTO = billSplitterService.addTipsAndTaxes(amount);
+					billSplitterService.addTipsAndTaxes(amount,billDetailsTO);
 				}
 				else
 				{
 					Double amount = validateLineForItem(words);
-					billDetailsTO = billSplitterService.addItem(itemName, amount);
+					 billSplitterService.addItem(itemName, amount, billDetailsTO);
 					
 					Set<String> participants = new HashSet<>();
 					
@@ -91,12 +91,12 @@ public class BillSplitterFileClient {
 						String participant = words[i];
 						participants.add(participant);
 					}
-					billDetailsTO = billSplitterService.addContributionsForItem(itemName, participants);
+					billSplitterService.addContributionsForItem(itemName, participants, billDetailsTO);
 				}
 				
 			}
 			
-			billSplitterService.printDetailedFinalReport();
+			billSplitterService.printDetailedFinalReport(billDetailsTO);
 		
 		
 		

@@ -15,7 +15,7 @@ public interface BillSplitterService {
 	 * @param name
 	 * @return
 	 */
-	public BillDetailsTO addUser(String name);
+	public BillDetailsTO addUser(String name, BillDetailsTO oldBillDetailsTO);
 	
 	/**
 	 * Adds a new item to the bill with the amount. Resets contribution for all users
@@ -24,14 +24,14 @@ public interface BillSplitterService {
 	 * @param participants
 	 * @return
 	 */
-	public BillDetailsTO addItem(String itemName, Double amount);
+	public BillDetailsTO addItem(String itemName, Double amount, BillDetailsTO oldBillDetailsTO);
 	
 	/**
 	 * Deletes an item from the bill. 
 	 * @param itemName
 	 * @return
 	 */
-	public BillDetailsTO deleteItem(String itemName);
+	public BillDetailsTO deleteItem(String itemName, BillDetailsTO oldBillDetailsTO);
 	
 	/**
 	 * Edits the name and the amount of an already added item. Does not touch contributors
@@ -39,27 +39,27 @@ public interface BillSplitterService {
 	 * @param newName
 	 * @return
 	 */
-	public BillDetailsTO editItem(String oldName, String newName, double newAmount);	
+	public BillDetailsTO editItem(String oldName, String newName, double newAmount, BillDetailsTO oldBillDetailsTO);	
 	
 	/**
 	 * Adds tips and taxes to the bill. Per head contribution is determined from the percentage contribution in total bill
 	 * @param amount
 	 * @return
 	 */
-	public BillDetailsTO addTipsAndTaxes(Double amount);
+	public BillDetailsTO addTipsAndTaxes(Double amount, BillDetailsTO oldBillDetailsTO);
 	
 	/**
 	 * Removes tips and taxes from the bill
 	 * @return
 	 */
-	public BillDetailsTO deleteTipsAndTaxes();
+	public BillDetailsTO deleteTipsAndTaxes(BillDetailsTO oldBillDetailsTO);
 	
 	/**
 	 * Edits tips and taxes to a new amount
 	 * @param newAmount
 	 * @return
 	 */
-	public BillDetailsTO editTipsAndTaxes(double newAmount);
+	public BillDetailsTO editTipsAndTaxes(double newAmount, BillDetailsTO oldBillDetailsTO);
 	
 	/**
 	 * Adds contribution to an existing item
@@ -67,7 +67,7 @@ public interface BillSplitterService {
 	 * @param participants
 	 * @return
 	 */
-	public BillDetailsTO addContributionsForItem(String itemName,Set<String> participants);
+	public BillDetailsTO addContributionsForItem(String itemName,Set<String> participants, BillDetailsTO oldBillDetailsTO);
 	
 	/**
 	 * Edit who is participating and who is not participating in an item. The order of the list is the same as the order in which users were added
@@ -75,16 +75,16 @@ public interface BillSplitterService {
 	 * @param participants
 	 * @return
 	 */
-	public BillDetailsTO editContributionsForItem(String itemName, List<Boolean> participants);
+	public BillDetailsTO editContributionsForItem(String itemName, List<Boolean> participants, BillDetailsTO oldBillDetailsTO);
 	
 	/**
 	 * Prints a summary of every users's contribtion in the bill
 	 */
-	public void printSummaryFinalReport();
+	public void printSummaryFinalReport(BillDetailsTO billDetailsTO);
 	
 	/**
 	 * Detailed report of the bill
 	 */
-	public void printDetailedFinalReport();
+	public void printDetailedFinalReport(BillDetailsTO BillDetailsTO);
 
 }

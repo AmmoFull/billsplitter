@@ -19,6 +19,8 @@ public class BillSplitterConsoleClient {
 	private static BillSplitterService billSplitterService;
 	
 	private static Scanner keyboardReader;
+	
+	private static BillDetailsTO billDetailsTO = null;;
 
 	public static void main(String[] args) {
 		
@@ -73,13 +75,13 @@ public class BillSplitterConsoleClient {
 		System.out.println("Tips and taxes done.");
 		System.out.println("************************");
 		
-		billSplitterService.printSummaryFinalReport();
+		billSplitterService.printSummaryFinalReport(billDetailsTO);
 		
 		System.out.println("************************");
 		System.out.println("Show more details? (y/n) : ");
 		yesNo = keyboardReader.nextLine();
 		if(isYes(yesNo)) {
-			billSplitterService.printDetailedFinalReport();
+			billSplitterService.printDetailedFinalReport(billDetailsTO);
 		} else if(isNo(yesNo)) {
 			System.out.println("Thank you for using Bill Splitter.");
 		} else {
@@ -92,7 +94,7 @@ public class BillSplitterConsoleClient {
 		System.out.println("Name: ");
 		String name = keyboardReader.nextLine();
 		try {
-			billSplitterService.addUser(name);
+			billDetailsTO = billSplitterService.addUser(name,billDetailsTO);
 			System.out.println(name + " added");
 		} catch(Exception e) {
 			System.out.println("Error: " + e.getMessage());
@@ -107,7 +109,7 @@ public class BillSplitterConsoleClient {
 		try {
 			String amountInString = keyboardReader.nextLine(); 
 			Double amount = Double.valueOf(amountInString);
-			BillDetailsTO billDetailsTO = billSplitterService.addItem(itemName, amount);
+			billDetailsTO = billSplitterService.addItem(itemName, amount, billDetailsTO);
 			
 			Set<String> participantsForThisItem = new HashSet<>();
 			
@@ -126,7 +128,7 @@ public class BillSplitterConsoleClient {
 					break;
 				}
 			}			
-			billSplitterService.addContributionsForItem(itemName, participantsForThisItem);
+			billDetailsTO = billSplitterService.addContributionsForItem(itemName, participantsForThisItem,billDetailsTO);
 		} catch(NumberFormatException e) {
 			System.out.println("A numeric input was expected");
 		}
@@ -139,7 +141,7 @@ public class BillSplitterConsoleClient {
 		try
 		{
 			Double tipAmount = Double.valueOf(tipString);
-			billSplitterService.addTipsAndTaxes(tipAmount);
+			billSplitterService.addTipsAndTaxes(tipAmount,billDetailsTO);
 		} catch(NumberFormatException e) {
 			System.out.println("A numeric input was expected");
 		}

@@ -2,6 +2,7 @@ package com.ammofull.java.billsplitter.engine;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -13,20 +14,18 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 	/**
 	 * Tips and taxes should be in the map only once. As name is the key for item name, it is hard coded here
 	 */
-	public static final String ITEM_NAME_FOR_TIPS_AND_TAXES = "Tips and taxes";
-	
-	private BillDetailsTO billDetailsTO;
-	
-	private Double tipsAndTaxes = 0.0;
-	
-	public BillSplitterServiceImpl() {
-		billDetailsTO = new BillDetailsTO();		
-	}
+	public static final String ITEM_NAME_FOR_TIPS_AND_TAXES = "Tips and taxes";		
 
 	@Override
-	public BillDetailsTO addUser(String name) {	
+	public BillDetailsTO addUser(String name, BillDetailsTO oldBillDetailsTO) {	
 		
-		validateUserNameOrItemName(name);
+		BillDetailsTO billDetailsTO = oldBillDetailsTO;
+		if(billDetailsTO == null)
+		{
+			billDetailsTO = new BillDetailsTO();
+		}
+		
+		validateUserNameOrItemName(name);		
 		
 		// Add user to the set
 		boolean isAdded = billDetailsTO.getUsers().add(name);		
@@ -34,35 +33,42 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 			throw new IllegalArgumentException(name + " already added");
 		}	
 		
-		computeEntireBill();
+		computeEntireBill(billDetailsTO);
 		
 		return billDetailsTO;
 	}	
 
 	@Override
-	public BillDetailsTO addItem(String itemName, Double amount) {
+	public BillDetailsTO addItem(String itemName, Double amount, BillDetailsTO oldBillDetailsTO) {
+		
+		BillDetailsTO billDetailsTO = oldBillDetailsTO;
+		if(billDetailsTO == null)
+		{
+			billDetailsTO = new BillDetailsTO();
+		}
 		
 		validateUserNameOrItemName(itemName);
 		if(amount == null || amount.equals(0.0))
 		{
 			throw new IllegalArgumentException("Amount cannot be null or zero");
 		}
-		ItemTO itemTO = new ItemTO(itemName, amount);
-		Set<String> participants = new HashSet<>();
-		
-		if(billDetailsTO.getItemsVsParticipants().containsKey(itemTO))
+				
+		if(billDetailsTO.getItemVsAmount().containsKey(itemName))
 		{
 			throw new IllegalArgumentException("Item name already present : " + itemName);
 		}	
+		billDetailsTO.getItemVsAmount().put(itemName, amount);
 
-		billDetailsTO.getItemsVsParticipants().put(itemTO, participants);
-		computeEntireBill();
+		// Reset participants for the new item
+		Set<String> participants = new HashSet<>();
+		billDetailsTO.getItemsVsParticipants().put(itemName, participants);		
+		computeEntireBill(billDetailsTO);
 		return billDetailsTO;	
 				
 	}	
 	
 	@Override
-	public BillDetailsTO addContributionsForItem(String itemName,Set<String> participants) {
+	public BillDetailsTO addContributionsForItem(String itemName,Set<String> participants, BillDetailsTO oldBillDetailsTO) {
 		
 		if(itemName == null || "".equals(itemName))
 		{
@@ -77,6 +83,12 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 			throw new IllegalArgumentException("Participants for tips and taxes are not provided explicitly");
 		}
 		
+		BillDetailsTO billDetailsTO = oldBillDetailsTO;
+		if(billDetailsTO == null)
+		{
+			billDetailsTO = new BillDetailsTO();
+		}
+		
 		Set<String> users = billDetailsTO.getUsers();
 		
 		// Feature: No need to call addUser explicitly by the client if participants are known
@@ -84,45 +96,51 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 		{
 			if(!users.contains(participant))
 			{
-				billDetailsTO = addUser(participant);
+				billDetailsTO = addUser(participant,billDetailsTO);
 			}
 		}
 		
-		Set<ItemTO> items = billDetailsTO.getItemsVsParticipants().keySet();
-		if(!items.contains(new ItemTO(itemName, 10D)))
+		Set<String> items = billDetailsTO.getItemVsAmount().keySet();
+		if(!items.contains(itemName))
 		{
 			throw new IllegalArgumentException(itemName + " not present. Call addItem method first");
 		}
 		
-		for(ItemTO item : items) {
-			if(item.getItemName().equals(itemName)) {
+		for(String item : items) {
+			if(item.equals(itemName)) {
 				billDetailsTO.getItemsVsParticipants().put(item, participants);
 				break;
 			}
 		}
 		
-		computeEntireBill();
+		computeEntireBill(billDetailsTO);
 		
 		return billDetailsTO;
 	}	
 	
 	@Override
-	public BillDetailsTO addTipsAndTaxes(Double amount) {
+	public BillDetailsTO addTipsAndTaxes(Double amount, BillDetailsTO oldBillDetailsTO) {
 		
 		if(amount == null)
 		{
 			throw new IllegalArgumentException("Amount cannot be null");
 		}
 		
-		tipsAndTaxes = amount;			
-		computeEntireBill(); 			
+		BillDetailsTO billDetailsTO = oldBillDetailsTO;
+		if(billDetailsTO == null)
+		{
+			billDetailsTO = new BillDetailsTO();
+		}
+		
+		billDetailsTO.setTipsAndTaxes(amount);			
+		computeEntireBill(billDetailsTO); 			
 		return billDetailsTO;	
 		
 				
 	}
 	
 	@Override
-	public void printSummaryFinalReport() {
+	public void printSummaryFinalReport(BillDetailsTO billDetailsTO) {
 		
 		System.out.println("***********************");
 		System.out.println("Per head contribution");
@@ -137,17 +155,18 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 	}
 
 	@Override
-	public void printDetailedFinalReport() {				
+	public void printDetailedFinalReport(BillDetailsTO billDetailsTO) {				
 		System.out.println("***********************");
 		System.out.println("Detailed breakdown");
 		System.out.println("***********************");
 		
 		
-		Map<ItemTO,Map<String,Double>> itemVsPerHeadContrib = billDetailsTO.getItemsVsPerHeadContributions();
+		Map<String,Map<String,Double>> itemVsPerHeadContrib = billDetailsTO.getItemsVsPerHeadContributions();
 		
-		for(ItemTO item : itemVsPerHeadContrib.keySet())
+		for(String item : itemVsPerHeadContrib.keySet())
 		{
-			System.out.println(item.getItemName() + " : " + item.getAmount());
+			Double amount = billDetailsTO.getItemVsAmount().get(item);
+			System.out.println(item + " : " + amount);
 			
 			Map<String,Double> userVsContribForItem = itemVsPerHeadContrib.get(item);
 			
@@ -157,7 +176,7 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 			}
 		}
 		
-		printSummaryFinalReport();
+		printSummaryFinalReport(billDetailsTO);
 		
 	}	
 	
@@ -167,26 +186,26 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 	 * 3) Calculate % contribution for every user so that tips and taxes can be allocated accordingly, using 2
 	 * 4) Calculate tips and taxes allocation using 3
 	 */
-	private void computeEntireBill() {
+	private void computeEntireBill(BillDetailsTO billDetailsTO) {
 		
 		// To calculate item contribution, at least one item has to be present
 		if(!billDetailsTO.getItemsVsParticipants().isEmpty())
 		{
-			computePerHeadContributionForItem();
+			computePerHeadContributionForItem(billDetailsTO);
 		}	
 
 		// To calculate any user based number, there has to be at least one user
 		if(!billDetailsTO.getUsers().isEmpty())
 		{
-			computePerHeadContributionForTotalBill();	
-			computePerHeadPercentageContributionForBill();
+			computePerHeadContributionForTotalBill(billDetailsTO);	
+			computePerHeadPercentageContributionForBill(billDetailsTO);
 		}	
 		
 		if(!billDetailsTO.getUsers().isEmpty() &&
 				!billDetailsTO.getItemsVsParticipants().isEmpty() &&				
-				!tipsAndTaxes.equals(0.0))
+				!billDetailsTO.getTipsAndTaxes().equals(0.0))
 		{
-			computeTipsAndTaxesAllocation();
+			computeTipsAndTaxesAllocation(billDetailsTO);
 		}
 	}
 
@@ -194,22 +213,25 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 	 * Method to calculate per head contribution for an item
 	 * It will evenly divide the amount among all the participants.
 	 */
-	private void computePerHeadContributionForItem() {
+	private void computePerHeadContributionForItem(BillDetailsTO billDetailsTO) {
 		
-		Set<ItemTO> items = billDetailsTO.getItemsVsParticipants().keySet();
-		Map<ItemTO,Set<String>> itemsAndParticipants = billDetailsTO.getItemsVsParticipants();
-		Map<ItemTO,Map<String,Double>> itemsAndPerHeadContributions = billDetailsTO.getItemsVsPerHeadContributions();
+		Set<String> items = billDetailsTO.getItemVsAmount().keySet();
+		Map<String,Set<String>> itemsAndParticipants = billDetailsTO.getItemsVsParticipants();
+		Map<String,Map<String,Double>> itemsAndPerHeadContributions = billDetailsTO.getItemsVsPerHeadContributions();
 		
-		for(ItemTO itemTO : items) {
-			Set<String> participants = itemsAndParticipants.get(itemTO);
+		for (Iterator<String> iterator = items.iterator(); iterator.hasNext();) {
+			String itemName = iterator.next();
+			
+			Set<String> participants = itemsAndParticipants.get(itemName);
 			
 			// Reset per head contributions for this item before recalculating
-			itemsAndPerHeadContributions.remove(itemTO);
+			itemsAndPerHeadContributions.remove(itemName);
 			Map<String,Double> perHeadContibutions = new HashMap<>();			
 			
 			if(participants.size() != 0) {				
 				// Get per head contribution number
-				double perHeadContribution = itemTO.getAmount() / participants.size();
+				Double amount = billDetailsTO.getItemVsAmount().get(itemName);
+				double perHeadContribution = amount / participants.size();
 				
 				// Allocate the per head contribution to each participant
 				for(String participant : participants) {
@@ -217,18 +239,18 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 				}				
 			} 
 			
-			itemsAndPerHeadContributions.put(itemTO, perHeadContibutions);			
-		}			
+			itemsAndPerHeadContributions.put(itemName, perHeadContibutions);			
+		}						
 	}
 	
 	/**
 	 * This method computes the total per head contribution. It changes when an item is added or a participant is added
 	 * @param perHeadContributionsForAnItem
 	 */
-	private void computePerHeadContributionForTotalBill() {
+	private void computePerHeadContributionForTotalBill(BillDetailsTO billDetailsTO) {
 		
-		Map<ItemTO,Map<String,Double>> itemsAndPerHeadContributions = billDetailsTO.getItemsVsPerHeadContributions();
-		Set<ItemTO> items = itemsAndPerHeadContributions.keySet();
+		Map<String,Map<String,Double>> itemsAndPerHeadContributions = billDetailsTO.getItemsVsPerHeadContributions();
+		Set<String> items = itemsAndPerHeadContributions.keySet();
 		
 		// Reset userVsTotalContribution before calculating
 		Map<String,Double> userVsTotalContribution = new HashMap<>();
@@ -239,7 +261,7 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 		
 		// Loop through all items and get the contribution for every user for the item
 		// Increment the total per head contribution for every user using the above traversal
-		for(ItemTO item : items) {
+		for(String item : items) {
 			Map<String,Double> userVsContributionForItem = itemsAndPerHeadContributions.get(item);
 			
 			for(String user : userVsContributionForItem.keySet())
@@ -262,7 +284,7 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 	 * this method computes that percentage per user. Note that total per head contribution should be available
 	 * before computing this
 	 */
-	private void computePerHeadPercentageContributionForBill() 
+	private void computePerHeadPercentageContributionForBill(BillDetailsTO billDetailsTO) 
 	{			
 		// Reset user vs percent contrib before calculating
 		Map<String,Double> userVsPercentContrib = new HashMap<>();
@@ -273,22 +295,23 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 
 		// Compute total bill before tips and taxes so that % contrib can be determined
 		double totalBillBeforeTipsAndTaxes = 0.0;
-		Set<ItemTO> items = billDetailsTO.getItemsVsParticipants().keySet();
+		Set<String> items = billDetailsTO.getItemsVsParticipants().keySet();
 
-		for(ItemTO item : items)
-		{					
+		for(String item : items)
+		{	
+			Double amount = billDetailsTO.getItemVsAmount().get(item);
 			// We dont need any check for tips and taxes here because that item is never added to the map ItemVsParticipants
-			totalBillBeforeTipsAndTaxes += item.getAmount();			
+			totalBillBeforeTipsAndTaxes += amount;			
 		}
 
 		
 		boolean isTipsAndTaxesRemoved = false;
-		if(billDetailsTO.getItemsVsPerHeadContributions().containsKey(new ItemTO(ITEM_NAME_FOR_TIPS_AND_TAXES, 0.0)))
+		if(billDetailsTO.getItemsVsPerHeadContributions().containsKey(ITEM_NAME_FOR_TIPS_AND_TAXES))
 		{
 			// We need to remove tips and taxes, re-calculate per head contrib before proceeding with % calc
-			billDetailsTO.getItemsVsPerHeadContributions().remove(new ItemTO(ITEM_NAME_FOR_TIPS_AND_TAXES, 0.0));
+			billDetailsTO.getItemsVsPerHeadContributions().remove(ITEM_NAME_FOR_TIPS_AND_TAXES);
 			isTipsAndTaxesRemoved = true;
-			computePerHeadContributionForTotalBill();
+			computePerHeadContributionForTotalBill(billDetailsTO);
 		}
 		Map<String,Double> userVsTotalPerHeadContribution = billDetailsTO.getUserVsTotalPerHeadContribution();
 
@@ -312,7 +335,7 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 		
 		if(isTipsAndTaxesRemoved)
 		{
-			computeTipsAndTaxesAllocation();
+			computeTipsAndTaxesAllocation(billDetailsTO);
 		}
 						
 	}	
@@ -321,9 +344,9 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 	 * Using percentage contrib, allocate tips and taxes among all users
 	 * Re-calculate per head total contrib based on this allocation
 	 */
-	private void computeTipsAndTaxesAllocation()
+	private void computeTipsAndTaxesAllocation(BillDetailsTO billDetailsTO)
 	{
-		ItemTO tipsAndTaxesItem = new ItemTO(ITEM_NAME_FOR_TIPS_AND_TAXES, tipsAndTaxes);
+		Double tipsAndTaxes = billDetailsTO.getTipsAndTaxes();
 		
 		Map<String,Double> userVsPercentageContrib = billDetailsTO.getUserVsPercentageContribInTheBill();
 		
@@ -340,11 +363,11 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 			userVsTipsAndTaxesContrib.put(user, tipAllocationForThisUser);
 		}
 		
-		billDetailsTO.getItemsVsPerHeadContributions().put(tipsAndTaxesItem, userVsTipsAndTaxesContrib);
+		billDetailsTO.getItemsVsPerHeadContributions().put(ITEM_NAME_FOR_TIPS_AND_TAXES, userVsTipsAndTaxesContrib);
 		
 		// Once tips and taxes are calculated, the per head contribution will change. 
 		// The percent contrib will not change as it does not include tips and taxes
-		computePerHeadContributionForTotalBill();		
+		computePerHeadContributionForTotalBill(billDetailsTO);		
 	}
 	
 	/**
@@ -364,33 +387,31 @@ public class BillSplitterServiceImpl implements BillSplitterService {
 	}
 
 	@Override
-	public BillDetailsTO deleteItem(String itemName) {
+	public BillDetailsTO deleteItem(String itemName, BillDetailsTO oldBillDetailsTO) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public BillDetailsTO editItem(String oldName, String newName,
-			double newAmount) {
+	public BillDetailsTO editItem(String oldName, String newName,double newAmount, BillDetailsTO oldBillDetailsTO) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public BillDetailsTO deleteTipsAndTaxes() {
+	public BillDetailsTO deleteTipsAndTaxes(BillDetailsTO oldBillDetailsTO) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public BillDetailsTO editTipsAndTaxes(double newAmount) {
+	public BillDetailsTO editTipsAndTaxes(double newAmount, BillDetailsTO oldBillDetailsTO) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public BillDetailsTO editContributionsForItem(String itemName,
-			List<Boolean> participants) {
+	public BillDetailsTO editContributionsForItem(String itemName,List<Boolean> participants, BillDetailsTO oldBillDetailsTO) {
 		// TODO Auto-generated method stub
 		return null;
 	}	
